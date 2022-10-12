@@ -8,7 +8,6 @@ import {
   SignerConnectionClientOpts,
 } from "@walletconnect/signer-connection";
 import {
-  SignerProvider,
   Account,
   SignTransferTxParams,
   SignTransferTxResult,
@@ -18,13 +17,12 @@ import {
   SignExecuteScriptTxResult,
   SignUnsignedTxParams,
   SignUnsignedTxResult,
-  SignHexStringParams,
-  SignHexStringResult,
   SignMessageParams,
   SignMessageResult,
   groupOfAddress,
   addressFromPublicKey,
   NodeProvider,
+  SignerProviderSimple,
 } from "@alephium/web3";
 
 import { getChainsFromNamespaces, getAccountsFromNamespaces } from "@walletconnect/utils";
@@ -68,10 +66,6 @@ interface SignerMethodsTable extends Record<SignerMethods, { params: any; result
     params: SignUnsignedTxParams;
     result: SignUnsignedTxResult;
   };
-  alph_signHexString: {
-    params: SignHexStringParams;
-    result: SignHexStringResult;
-  };
   alph_signMessage: {
     params: SignMessageParams;
     result: SignMessageResult;
@@ -104,7 +98,7 @@ export interface WalletConnectProviderOptions {
   client?: SignerConnectionClientOpts;
 }
 
-class WalletConnectProvider extends SignerProvider {
+class WalletConnectProvider extends SignerProviderSimple {
   public events: any = new EventEmitter();
   public nodeProvider: NodeProvider | undefined = undefined;
 
@@ -194,7 +188,7 @@ class WalletConnectProvider extends SignerProvider {
 
   private typedRequest<T extends SignerMethods>(
     method: T,
-    params: MethodParams<T>
+    params: MethodParams<T>,
   ): Promise<MethodResult<T>> {
     return this.request({ method, params });
   }
@@ -221,10 +215,6 @@ class WalletConnectProvider extends SignerProvider {
 
   public async signUnsignedTx(params: SignUnsignedTxParams): Promise<SignUnsignedTxResult> {
     return this.typedRequest("alph_signUnsignedTx", params);
-  }
-
-  public async signHexString(params: SignHexStringParams): Promise<SignHexStringResult> {
-    return this.typedRequest("alph_signHexString", params);
   }
 
   public async signMessage(params: SignMessageParams): Promise<SignMessageResult> {
@@ -352,10 +342,10 @@ export function isCompatibleChain(chain: string): boolean {
 export function isCompatibleWithPermittedGroups(group: ChainGroup, permittedGroups: ChainGroup[]): boolean {
   for (const permittedGroup of permittedGroups) {
     if (isCompatibleChainGroup(group, permittedGroup)) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 export function isCompatibleChainGroup(group: ChainGroup, expectedChainGroup?: ChainGroup): boolean {
@@ -392,9 +382,9 @@ export function parseAccount(account: string): Account {
 
 export function getPermittedChainGroups(chains: string[]): Record<NetworkId, ChainGroup[]> {
   const infos = chains.map((chain) => {
-    const [networkId, chainGroup] = parseChain(chain)
-    return { networkId, chainGroup }
-  })
+    const [networkId, chainGroup] = parseChain(chain);
+    return { networkId, chainGroup };
+  });
 
   return infos.reduce((acc, info) => {
     const networkId = info.networkId;
